@@ -460,7 +460,8 @@ func syncCmd() *cobra.Command {
 			}
 
 			if dryRun {
-				bold.Println("Dry run — no changes will be made:\n")
+				bold.Println("Dry run — no changes will be made:")
+				fmt.Println()
 			} else {
 				bold.Printf("Syncing base -> %s\n\n", name)
 			}
