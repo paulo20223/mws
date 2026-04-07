@@ -69,6 +69,45 @@ fi
 
 chmod +x "$TMPFILE"
 
+# ── shell integration helper ─────────────────────────────────────────────────
+
+MARKER_BEGIN="# >>> mws initialize >>>"
+MARKER_END="# <<< mws initialize <<<"
+
+setup_shell() {
+  MWS_BIN="$1"
+
+  # detect rc file
+  case "$SHELL" in
+    */zsh)  RC_FILE="$HOME/.zshrc" ;;
+    */bash) RC_FILE="$HOME/.bashrc" ;;
+    *)
+      if [ -f "$HOME/.zshrc" ]; then
+        RC_FILE="$HOME/.zshrc"
+      elif [ -f "$HOME/.bashrc" ]; then
+        RC_FILE="$HOME/.bashrc"
+      else
+        RC_FILE=""
+      fi
+      ;;
+  esac
+
+  if [ -z "$RC_FILE" ]; then
+    echo "Could not detect shell rc file. Add manually:"
+    echo "  eval \"\$(mws shell-init)\""
+    return
+  fi
+
+  # idempotent: skip if already present
+  if [ -f "$RC_FILE" ] && grep -qF "$MARKER_BEGIN" "$RC_FILE"; then
+    echo "Shell integration already configured in $RC_FILE"
+    return
+  fi
+
+  printf '\n%s\neval "$(%s shell-init)"\n%s\n' "$MARKER_BEGIN" "$MWS_BIN" "$MARKER_END" >> "$RC_FILE"
+  echo "Shell integration added to $RC_FILE"
+}
+
 # ── install ──────────────────────────────────────────────────────────────────
 
 INSTALL_DIR=""
@@ -88,6 +127,7 @@ else
   echo ""
   echo "Installed: /usr/local/bin/${BINARY}"
   /usr/local/bin/${BINARY} --version 2>/dev/null || /usr/local/bin/${BINARY} --help | head -1
+  setup_shell "/usr/local/bin/${BINARY}"
   echo ""
   echo "Done! Run 'mws --help' to get started."
   exit 0
@@ -114,5 +154,10 @@ case ":$PATH:" in
 esac
 
 ${INSTALL_DIR}/${BINARY} --version 2>/dev/null || ${INSTALL_DIR}/${BINARY} --help | head -1
+
+# ── shell integration ────────────────────────────────────────────────────────
+
+setup_shell "${INSTALL_DIR}/${BINARY}"
+
 echo ""
 echo "Done! Run 'mws --help' to get started."

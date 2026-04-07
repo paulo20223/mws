@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"text/tabwriter"
 
@@ -41,6 +43,8 @@ func main() {
 		openCmd(),
 		baseCmd(),
 		syncCmd(),
+		shellInitCmd(),
+		shellSetupCmd(),
 	)
 
 	if err := rootCmd.Execute(); err != nil {
@@ -508,4 +512,142 @@ func uniqueBranches(repos []task.RepoRef) string {
 		result = result[:37] + "..."
 	}
 	return result
+}
+
+// ── mws shell-init ──────────────────────────────────────────────────────────
+
+const shellInitCode = `# mws shell integration — managed by 'mws shell-init'
+
+# quick navigation: mcd <task-name>
+mcd() { cd "$(mws cd "$1")" }
+
+# return to base workspace
+mbase() { cd "$(mws base)" }
+
+# show current mws task in prompt
+_mws_prompt() {
+  local f="$PWD"
+  while [[ "$f" != "/" ]]; do
+    if [[ -f "$f/.mws-task" ]]; then
+      printf "[mws:%s] " "$(cat "$f/.mws-task")"
+      return
+    fi
+    f="$(dirname "$f")"
+  done
+}
+
+# inject into PROMPT if not already present
+if [[ "$PROMPT" != *'$(_mws_prompt)'* ]]; then
+  PROMPT='$(_mws_prompt)'"$PROMPT"
+fi
+`
+
+const (
+	shellMarkerBegin = "# >>> mws initialize >>>"
+	shellMarkerEnd   = "# <<< mws initialize <<<"
+)
+
+func shellInitCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "shell-init",
+		Short: "Output shell integration code (use: eval \"$(mws shell-init)\")",
+		Long:  "Prints shell code that provides mcd(), mbase(), and prompt integration.\nAdd 'eval \"$(mws shell-init)\"' to your shell rc file, or run 'mws shell-setup' to do it automatically.",
+		Args:  cobra.NoArgs,
+		Run: func(cmd *cobra.Command, args []string) {
+			os.Stdout.WriteString(shellInitCode)
+		},
+	}
+}
+
+// ── mws shell-setup ─────────────────────────────────────────────────────────
+
+func shellSetupCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "shell-setup",
+		Short: "Add shell integration to your shell rc file (~/.zshrc or ~/.bashrc)",
+		Long:  "Detects your shell, finds the rc file, and adds 'eval \"$(mws shell-init)\"' if not already present. Idempotent — safe to run multiple times.",
+		Args:  cobra.NoArgs,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			rcFile, err := detectRCFile()
+			if err != nil {
+				return err
+			}
+
+			injected, err := injectShellInit(rcFile)
+			if err != nil {
+				return err
+			}
+
+			if injected {
+				green.Printf("Shell integration added to %s\n", rcFile)
+				fmt.Println("Restart your shell or run:")
+				cyan.Printf("  source %s\n", rcFile)
+			} else {
+				dim.Printf("Shell integration already present in %s\n", rcFile)
+			}
+
+			return nil
+		},
+	}
+}
+
+// detectRCFile returns the shell rc file path based on $SHELL.
+func detectRCFile() (string, error) {
+	shell := os.Getenv("SHELL")
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("cannot determine home directory: %w", err)
+	}
+
+	switch {
+	case strings.Contains(shell, "zsh"):
+		return filepath.Join(home, ".zshrc"), nil
+	case strings.Contains(shell, "bash"):
+		return filepath.Join(home, ".bashrc"), nil
+	default:
+		// default to zsh on macOS, bash on linux
+		if _, err := os.Stat(filepath.Join(home, ".zshrc")); err == nil {
+			return filepath.Join(home, ".zshrc"), nil
+		}
+		return filepath.Join(home, ".bashrc"), nil
+	}
+}
+
+// injectShellInit adds the eval block to the rc file if not present.
+// Returns true if injection was performed, false if already present.
+func injectShellInit(rcFile string) (bool, error) {
+	// Check if marker already exists
+	if fileContains(rcFile, shellMarkerBegin) {
+		return false, nil
+	}
+
+	f, err := os.OpenFile(rcFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return false, fmt.Errorf("cannot write to %s: %w", rcFile, err)
+	}
+	defer f.Close()
+
+	block := fmt.Sprintf("\n%s\neval \"$(mws shell-init)\"\n%s\n", shellMarkerBegin, shellMarkerEnd)
+	if _, err := f.WriteString(block); err != nil {
+		return false, fmt.Errorf("writing to %s: %w", rcFile, err)
+	}
+
+	return true, nil
+}
+
+// fileContains checks if a file contains a given string.
+func fileContains(path, needle string) bool {
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		if strings.Contains(scanner.Text(), needle) {
+			return true
+		}
+	}
+	return false
 }

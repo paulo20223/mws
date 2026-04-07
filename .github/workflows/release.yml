@@ -89,6 +89,22 @@ jobs:
           # Remove leading spaces from heredoc (control file is whitespace-sensitive)
           sed -i 's/^          //' "${PKG}/DEBIAN/control"
 
+          # postinst: auto-configure shell integration
+          cat > "${PKG}/DEBIAN/postinst" <<'POSTINST'
+          #!/bin/sh
+          set -e
+          MARKER="# >>> mws initialize >>>"
+          for RC in "$HOME/.zshrc" "$HOME/.bashrc"; do
+            [ -f "$RC" ] || continue
+            grep -qF "$MARKER" "$RC" && continue
+            printf '\n%s\neval "$(mws shell-init)"\n# <<< mws initialize <<<\n' "$MARKER" >> "$RC"
+            echo "mws: shell integration added to $RC"
+          done
+          exit 0
+          POSTINST
+          sed -i 's/^          //' "${PKG}/DEBIAN/postinst"
+          chmod 755 "${PKG}/DEBIAN/postinst"
+
           dpkg-deb --build "${PKG}"
           mkdir -p dist
           mv "${PKG}.deb" dist/
