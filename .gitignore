@@ -1,2 +1,3 @@
-mws
+/mws
 *.exe
+dist/
