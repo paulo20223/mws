@@ -16,12 +16,12 @@ import (
 )
 
 var (
-	bold    = color.New(color.Bold)
-	green   = color.New(color.FgGreen)
-	yellow  = color.New(color.FgYellow)
-	red     = color.New(color.FgRed)
-	cyan    = color.New(color.FgCyan)
-	dim     = color.New(color.Faint)
+	bold   = color.New(color.Bold)
+	green  = color.New(color.FgGreen)
+	yellow = color.New(color.FgYellow)
+	red    = color.New(color.FgRed)
+	cyan   = color.New(color.FgCyan)
+	dim    = color.New(color.Faint)
 )
 
 func main() {

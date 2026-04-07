@@ -11,8 +11,8 @@ import (
 
 // Manifest represents a task's manifest.toml file.
 type Manifest struct {
-	Task  TaskInfo   `toml:"task"`
-	Repos []RepoRef  `toml:"repos"`
+	Task  TaskInfo    `toml:"task"`
+	Repos []RepoRef   `toml:"repos"`
 	Hooks HooksConfig `toml:"hooks"`
 }
 

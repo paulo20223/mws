@@ -19,7 +19,7 @@ func CopyWorkspace(src, dst string, excludes []string) error {
 
 	// Exclude any existing task copies (directories matching base--*)
 	// We use the pattern to skip sibling task directories
-	args = append(args, "--exclude", "mws/")  // exclude the mws tool itself
+	args = append(args, "--exclude", "mws/") // exclude the mws tool itself
 
 	// Ensure trailing slash on src for rsync directory semantics
 	if !strings.HasSuffix(src, "/") {
@@ -42,8 +42,8 @@ func CopyWorkspace(src, dst string, excludes []string) error {
 // Excludes git repos (they have their own branches).
 func SyncFromBase(src, dst string, excludes []string, gitRepoPaths []string, dryRun bool) (string, error) {
 	args := []string{
-		"-av",         // archive + verbose (shows transferred files)
-		"--update",    // only update files that are newer in source
+		"-av",      // archive + verbose (shows transferred files)
+		"--update", // only update files that are newer in source
 	}
 
 	if dryRun {

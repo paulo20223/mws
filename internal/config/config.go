@@ -8,11 +8,11 @@ import (
 )
 
 const (
-	MWSDir      = ".mws"
-	ConfigFile  = "config.toml"
-	ActiveFile  = "active"
-	TasksDir    = "tasks"
-	TaskMarker  = ".mws-task"
+	MWSDir     = ".mws"
+	ConfigFile = "config.toml"
+	ActiveFile = "active"
+	TasksDir   = "tasks"
+	TaskMarker = ".mws-task"
 )
 
 // Config represents the global mws configuration.
