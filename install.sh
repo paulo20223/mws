@@ -47,8 +47,8 @@ fi
 
 VERSION="$($FETCH "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | head -1 | sed 's/.*"tag_name": *"//;s/".*//')"
 if [ -z "$VERSION" ]; then
-  echo "Warning: could not detect latest version, using v0.2.0"
-  VERSION="v0.2.0"
+  echo "Warning: could not detect latest version, using v0.3.0"
+  VERSION="v0.3.0"
 fi
 
 echo "Latest version: ${VERSION}"
@@ -69,45 +69,6 @@ fi
 
 chmod +x "$TMPFILE"
 
-# ── shell integration helper ─────────────────────────────────────────────────
-
-MARKER_BEGIN="# >>> mws initialize >>>"
-MARKER_END="# <<< mws initialize <<<"
-
-setup_shell() {
-  MWS_BIN="$1"
-
-  # detect rc file
-  case "$SHELL" in
-    */zsh)  RC_FILE="$HOME/.zshrc" ;;
-    */bash) RC_FILE="$HOME/.bashrc" ;;
-    *)
-      if [ -f "$HOME/.zshrc" ]; then
-        RC_FILE="$HOME/.zshrc"
-      elif [ -f "$HOME/.bashrc" ]; then
-        RC_FILE="$HOME/.bashrc"
-      else
-        RC_FILE=""
-      fi
-      ;;
-  esac
-
-  if [ -z "$RC_FILE" ]; then
-    echo "Could not detect shell rc file. Add manually:"
-    echo "  eval \"\$(mws shell-init)\""
-    return
-  fi
-
-  # idempotent: skip if already present
-  if [ -f "$RC_FILE" ] && grep -qF "$MARKER_BEGIN" "$RC_FILE"; then
-    echo "Shell integration already configured in $RC_FILE"
-    return
-  fi
-
-  printf '\n%s\neval "$(%s shell-init)"\n%s\n' "$MARKER_BEGIN" "$MWS_BIN" "$MARKER_END" >> "$RC_FILE"
-  echo "Shell integration added to $RC_FILE"
-}
-
 # ── install ──────────────────────────────────────────────────────────────────
 
 INSTALL_DIR=""
@@ -119,15 +80,14 @@ if [ -d "$HOME/.local/bin" ] || mkdir -p "$HOME/.local/bin" 2>/dev/null; then
 elif [ -w "/usr/local/bin" ]; then
   INSTALL_DIR="/usr/local/bin"
 else
-  # try with sudo
   echo "Need sudo to install to /usr/local/bin"
   sudo mkdir -p /usr/local/bin
   sudo mv "$TMPFILE" "/usr/local/bin/${BINARY}"
   sudo chmod +x "/usr/local/bin/${BINARY}"
+  INSTALL_DIR="/usr/local/bin"
   echo ""
-  echo "Installed: /usr/local/bin/${BINARY}"
-  /usr/local/bin/${BINARY} --version 2>/dev/null || /usr/local/bin/${BINARY} --help | head -1
-  setup_shell "/usr/local/bin/${BINARY}"
+  echo "Installed: ${INSTALL_DIR}/${BINARY}"
+  echo "Shell integration: eval \"\$(mws shell-init)\"  # add to ~/.zshrc"
   echo ""
   echo "Done! Run 'mws --help' to get started."
   exit 0
@@ -146,18 +106,11 @@ case ":$PATH:" in
   *)
     echo ""
     echo "WARNING: ${INSTALL_DIR} is not in your PATH."
-    echo "Add this to your shell profile (~/.bashrc, ~/.zshrc, etc.):"
-    echo ""
     echo "  export PATH=\"${INSTALL_DIR}:\$PATH\""
     echo ""
     ;;
 esac
 
-${INSTALL_DIR}/${BINARY} --version 2>/dev/null || ${INSTALL_DIR}/${BINARY} --help | head -1
-
-# ── shell integration ────────────────────────────────────────────────────────
-
-setup_shell "${INSTALL_DIR}/${BINARY}"
-
+echo "Shell integration: eval \"\$(mws shell-init)\"  # add to ~/.zshrc"
 echo ""
 echo "Done! Run 'mws --help' to get started."

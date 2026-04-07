@@ -92,40 +92,16 @@ mws delete bugfix-y --force   # done, remove copy
 | `mws base` | Print base workspace path |
 | `mws sync <name> [--dry-run]` | Sync non-repo files from base |
 | `mws shell-init` | Output shell integration code |
-| `mws shell-setup` | Add shell integration to rc file |
 
 ## Shell integration
 
-Shell integration is **configured automatically** during installation (`curl | sh`, `brew install`, `dpkg -i`). It adds this to your `~/.zshrc`:
+Add to `~/.zshrc`:
 
 ```bash
-# >>> mws initialize >>>
 eval "$(mws shell-init)"
-# <<< mws initialize <<<
 ```
 
-This provides:
-
-- **`mcd <task>`** — jump into a task workspace
-- **`mbase`** — return to base workspace
-- **`[mws:task-name]`** — current task shown in prompt
-
-If you need to set it up manually:
-
-```bash
-# quick navigation
-mcd() { cd "$(mws cd "$1")" }
-
-# show current task in prompt
-mws_prompt() {
-  local f="$PWD"
-  while [[ "$f" != "/" ]]; do
-    [[ -f "$f/.mws-task" ]] && { echo "[$(cat "$f/.mws-task")] "; return; }
-    f="$(dirname "$f")"
-  done
-}
-PROMPT='$(mws_prompt)'$PROMPT
-```
+This gives you `mcd <task>`, `mbase`, and `[mws:task-name]` in your prompt.
 
 ## How it works
 
