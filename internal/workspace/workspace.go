@@ -5,8 +5,8 @@ import (
 	"os"
 	"path/filepath"
 
-	cfg "github.com/pavel/mws/internal/config"
-	"github.com/pavel/mws/internal/git"
+	cfg "github.com/paulo20223/mws/internal/config"
+	"github.com/paulo20223/mws/internal/git"
 )
 
 // Workspace represents an initialized mws workspace.

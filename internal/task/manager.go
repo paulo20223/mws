@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"time"
 
-	cfg "github.com/pavel/mws/internal/config"
-	"github.com/pavel/mws/internal/git"
-	"github.com/pavel/mws/internal/workspace"
+	cfg "github.com/paulo20223/mws/internal/config"
+	"github.com/paulo20223/mws/internal/git"
+	"github.com/paulo20223/mws/internal/workspace"
 )
 
 // Manager handles task CRUD operations.

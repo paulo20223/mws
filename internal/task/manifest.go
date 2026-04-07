@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
-	cfg "github.com/pavel/mws/internal/config"
+	cfg "github.com/paulo20223/mws/internal/config"
 )
 
 // Manifest represents a task's manifest.toml file.

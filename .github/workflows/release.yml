@@ -8,8 +8,11 @@ on:
 permissions:
   contents: write
 
+env:
+  BINARY: mws
+
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -44,8 +47,60 @@ jobs:
           name: mws-${{ matrix.goos }}-${{ matrix.goarch }}
           path: dist/mws-${{ matrix.goos }}-${{ matrix.goarch }}
 
+  deb:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - goarch: amd64
+            deb_arch: amd64
+          - goarch: arm64
+            deb_arch: arm64
+    steps:
+      - name: Download binary
+        uses: actions/download-artifact@v4
+        with:
+          name: mws-linux-${{ matrix.goarch }}
+          path: bin/
+
+      - name: Build .deb
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          PKG="mws_${VERSION}_${{ matrix.deb_arch }}"
+          mkdir -p "${PKG}/DEBIAN"
+          mkdir -p "${PKG}/usr/local/bin"
+
+          cp bin/mws-linux-${{ matrix.goarch }} "${PKG}/usr/local/bin/mws"
+          chmod +x "${PKG}/usr/local/bin/mws"
+
+          cat > "${PKG}/DEBIAN/control" <<EOF
+          Package: mws
+          Version: ${VERSION}
+          Section: devel
+          Priority: optional
+          Architecture: ${{ matrix.deb_arch }}
+          Maintainer: paulo20223 <paulo20223@users.noreply.github.com>
+          Description: Multi-task workspace manager
+           Work on multiple tasks simultaneously across repos with full workspace isolation.
+          Homepage: https://github.com/paulo20223/mws
+          EOF
+
+          # Remove leading spaces from heredoc (control file is whitespace-sensitive)
+          sed -i 's/^          //' "${PKG}/DEBIAN/control"
+
+          dpkg-deb --build "${PKG}"
+          mkdir -p dist
+          mv "${PKG}.deb" dist/
+
+      - name: Upload .deb artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: mws-deb-${{ matrix.deb_arch }}
+          path: dist/*.deb
+
   publish:
-    needs: release
+    needs: [build, deb]
     runs-on: ubuntu-latest
     steps:
       - name: Download all artifacts
@@ -54,8 +109,25 @@ jobs:
           path: dist
           merge-multiple: true
 
+      - name: List artifacts
+        run: ls -la dist/
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: dist/*
+
+  homebrew:
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Homebrew formula
+        uses: mislav/bump-homebrew-formula-action@v3
+        with:
+          formula-name: mws
+          homebrew-tap: paulo20223/homebrew-tap
+          download-url: https://github.com/paulo20223/mws/releases/download/${{ github.ref_name }}/mws-darwin-arm64
+        env:
+          COMMITTER_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        continue-on-error: true

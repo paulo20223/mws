@@ -1,4 +1,4 @@
-module github.com/pavel/mws
+module github.com/paulo20223/mws
 
 go 1.25.0
 
