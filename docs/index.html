@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>mws(1) — Multi-task Workspace Manager</title>
+  <meta name="description" content="mws — like git worktree, but for your entire multi-repo project. Isolated workspaces for multi-repo projects.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='8' fill='%23222'/><text x='50' y='66' font-size='44' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%23fff'>mws</text></svg>">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #fafafa;
+      color: #1a1a1a;
+      line-height: 1.65;
+      padding: 0;
+    }
+
+    .header {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      padding: 2.5rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .header .wrap {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+
+    .header h1 {
+      font-size: 1.5rem;
+      font-family: "SF Mono", Menlo, Consolas, monospace;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .header-links {
+      display: flex;
+      gap: 1.25rem;
+      font-size: 0.85rem;
+    }
+
+    .header-links a {
+      color: #999;
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .header-links a:hover { color: #fff; }
+
+    .wrap {
+      max-width: 740px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .name-line {
+      color: #555;
+      font-size: 1.05rem;
+      margin-bottom: 2rem;
+      line-height: 1.6;
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin: 2.5rem 0 0.75rem;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid #e0e0e0;
+      color: #111;
+      letter-spacing: -0.2px;
+    }
+
+    h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin: 1.5rem 0 0.4rem;
+      color: #333;
+    }
+
+    p { margin-bottom: 0.75rem; }
+
+    a { color: #0969da; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    code {
+      font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.85em;
+      background: #eee;
+      padding: 0.15em 0.4em;
+      border-radius: 4px;
+      color: #d14;
+    }
+
+    pre {
+      background: #1a1a1a;
+      color: #e0e0e0;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      font-family: "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+      font-size: 0.8125rem;
+      line-height: 1.65;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      font-size: inherit;
+      color: inherit;
+    }
+
+    pre .comment { color: #6a737d; }
+    pre .prompt { color: #7ee787; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 1rem;
+      font-size: 0.875rem;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #e0e0e0;
+    }
+
+    th {
+      background: #f0f0f0;
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #555;
+    }
+
+    tr:hover td { background: #f7f7f7; }
+
+    td code {
+      white-space: nowrap;
+      color: #1a1a1a;
+      background: #eee;
+    }
+
+    ul, ol { margin: 0 0 0.75rem 1.5rem; }
+    li { margin-bottom: 0.3rem; }
+    li code { color: #1a1a1a; font-weight: 600; }
+
+    footer {
+      margin-top: 3rem;
+      padding: 1.5rem 0;
+      border-top: 2px solid #e0e0e0;
+      font-size: 0.85rem;
+      color: #888;
+    }
+
+    footer a { color: #555; }
+    footer a:hover { color: #111; }
+
+    @media (max-width: 600px) {
+      .header { padding: 1.5rem 1rem; }
+      .wrap { padding: 0 1rem; }
+      pre { font-size: 0.75rem; padding: 0.75rem 1rem; }
+      table { font-size: 0.8rem; }
+      th, td { padding: 0.35rem 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="wrap">
+      <h1>mws</h1>
+      <div class="header-links">
+        <a href="https://github.com/paulo20223/mws">GitHub</a>
+        <a href="https://github.com/paulo20223/mws/releases">Releases</a>
+        <a href="https://github.com/paulo20223/mws/issues">Issues</a>
+      </div>
+    </div>
+  </div>
+
+<div class="wrap">
+
+  <p class="name-line">Multi-task Workspace Manager &mdash; like <code>git worktree</code>, but for your entire multi-repo project.</p>
+
+  <h2>Synopsis</h2>
+  <pre><code><span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/paulo20223/mws/main/install.sh | bash</code></pre>
+
+  <h2>Description</h2>
+  <p>
+    <strong>mws</strong> creates fully isolated copies of your multi-repo workspace so you can
+    work on multiple tasks in parallel without conflicts. Each task gets its own copy of
+    every repo, config file, and docker-compose &mdash; with automatic branch switching across
+    all git repositories.
+  </p>
+  <p>
+    When your project spans multiple repos, shared configs, and compose files, switching
+    tasks means stashing changes across repos, hoping configs don't conflict, and losing
+    your flow. <code>git worktree</code> only handles a single repo. <strong>mws</strong>
+    handles the whole workspace.
+  </p>
+
+  <h2>Quick Start</h2>
+  <pre><code><span class="prompt">$</span> cd /path/to/your/workspace
+<span class="prompt">$</span> mws init
+<span class="prompt">$</span> mws create feature-x -b feature/x -r "backend*,frontend"
+<span class="prompt">$</span> mws create bugfix-y -b fix/y
+<span class="prompt">$</span> mws list
+<span class="prompt">$</span> mws status feature-x
+<span class="prompt">$</span> cd $(mws cd feature-x)
+<span class="prompt">$</span> mws sync feature-x
+<span class="prompt">$</span> mws delete bugfix-y --force</code></pre>
+
+  <h2>Commands</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Command</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><code>mws init</code></td><td>Initialize workspace, discover all git repos</td></tr>
+      <tr><td><code>mws create &lt;name&gt; [-b branch] [-r globs]</code></td><td>Full workspace copy, switch branches</td></tr>
+      <tr><td><code>mws list</code></td><td>List all tasks with sizes and branches</td></tr>
+      <tr><td><code>mws status [name]</code></td><td>Show repo branches, modified/staged/untracked</td></tr>
+      <tr><td><code>mws delete &lt;name&gt; [--force]</code></td><td>Remove task copy and metadata</td></tr>
+      <tr><td><code>mws cd &lt;name&gt;</code></td><td>Print task path (use with <code>cd $(...)</code>)</td></tr>
+      <tr><td><code>mws open &lt;name&gt;</code></td><td>Open task workspace in editor</td></tr>
+      <tr><td><code>mws base</code></td><td>Print base workspace path</td></tr>
+      <tr><td><code>mws sync &lt;name&gt; [--dry-run]</code></td><td>Sync non-repo files from base</td></tr>
+      <tr><td><code>mws shell-init</code></td><td>Output shell integration code</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How It Works</h2>
+  <p>
+    <code>mws create</code> copies the entire workspace directory alongside the original,
+    switching each git repo to the specified branch. Non-repo files (docker-compose, configs,
+    scripts) get their own independent copies.
+  </p>
+<pre><span class="comment"># base (original)</span>
+/path/to/workspace/
+&#x251C;&#x2500;&#x2500; repo-a/
+&#x251C;&#x2500;&#x2500; repo-b/
+&#x251C;&#x2500;&#x2500; docker-compose.yml
+&#x251C;&#x2500;&#x2500; shared-config/
+&#x2514;&#x2500;&#x2500; .mws/
+    &#x251C;&#x2500;&#x2500; config.toml
+    &#x2514;&#x2500;&#x2500; tasks/
+        &#x2514;&#x2500;&#x2500; feature-x/
+            &#x2514;&#x2500;&#x2500; manifest.toml
+
+<span class="comment"># full isolated copy</span>
+/path/to/workspace--feature-x/
+&#x251C;&#x2500;&#x2500; repo-a/                           <span class="comment"># on branch feature/x</span>
+&#x251C;&#x2500;&#x2500; repo-b/                           <span class="comment"># on branch feature/x</span>
+&#x251C;&#x2500;&#x2500; docker-compose.yml                <span class="comment"># own copy, edit freely</span>
+&#x251C;&#x2500;&#x2500; shared-config/                    <span class="comment"># own copy</span>
+&#x2514;&#x2500;&#x2500; .mws-task                         <span class="comment"># marker file</span></pre>
+
+  <h2>Configuration</h2>
+  <p>Config lives at <code>.mws/config.toml</code> in the base workspace:</p>
+<pre><code>[workspace]
+base = "/path/to/workspace"
+editor = "code"
+
+[copy]
+exclude = [
+    "node_modules/",
+    ".venv/",
+    "__pycache__/",
+    ".next/",
+    "dist/",
+    "build/",
+    ".mws/",
+    "*.pyc",
+    ".DS_Store",
+    "plans/",
+    ".git/lfs/",
+    "vendor/",
+    "target/",
+]</code></pre>
+
+  <h2>Shell Integration</h2>
+  <p>Add to your <code>~/.bashrc</code> or <code>~/.zshrc</code>:</p>
+  <pre><code><span class="prompt">$</span> eval "$(mws shell-init)"</code></pre>
+  <p>This gives you:</p>
+  <ul>
+    <li><code>mcd &lt;task&gt;</code> &mdash; navigate directly into a task workspace</li>
+    <li><code>mbase</code> &mdash; navigate back to the base workspace</li>
+    <li><code>[mws:task-name]</code> in your shell prompt when inside a task</li>
+  </ul>
+
+  <h2>Install</h2>
+
+  <h3>curl (recommended)</h3>
+  <pre><code><span class="prompt">$</span> curl -fsSL https://raw.githubusercontent.com/paulo20223/mws/main/install.sh | bash</code></pre>
+
+  <h3>Homebrew</h3>
+  <pre><code><span class="prompt">$</span> brew install paulo20223/tap/mws</code></pre>
+
+  <h3>Debian / Ubuntu</h3>
+  <pre><code><span class="prompt">$</span> curl -fsSLO https://github.com/paulo20223/mws/releases/latest/download/mws_amd64.deb
+<span class="prompt">$</span> sudo dpkg -i mws_amd64.deb</code></pre>
+
+  <h3>From source</h3>
+  <p>Requires Go 1.22+.</p>
+  <pre><code><span class="prompt">$</span> go install github.com/paulo20223/mws/cmd/mws@latest</code></pre>
+
+  <h3>Manual</h3>
+  <p>Download the binary for your platform from <a href="https://github.com/paulo20223/mws/releases">GitHub Releases</a> and place it in your <code>$PATH</code>.</p>
+
+  <footer>
+    <p>
+      <a href="https://github.com/paulo20223/mws">GitHub</a> &middot;
+      <a href="https://github.com/paulo20223/mws/releases">Releases</a> &middot;
+      <a href="https://github.com/paulo20223/mws/issues">Issues</a> &middot;
+      MIT License &middot; Written in Go
+    </p>
+  </footer>
+
+</div>
+</body>
+</html>
